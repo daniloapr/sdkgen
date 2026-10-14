@@ -1,21 +1,32 @@
-// ignore_for_file: avoid_web_libraries_in_flutter
-import 'dart:html';
-import 'dart:js' as js;
+import 'dart:js_interop';
+
+import 'package:web/web.dart' as web;
+
+@JS('Intl.DateTimeFormat')
+external _DateTimeFormat _dateTimeFormat();
+
+extension type _DateTimeFormat._(JSObject _) implements JSObject {
+  external _ResolvedOptions resolvedOptions();
+}
+
+extension type _ResolvedOptions._(JSObject _) implements JSObject {
+  external String? get timeZone;
+}
 
 Future<Map<String, Object?>> getDeviceInfo(String deviceId) async {
   // Intl.DateTimeFormat().resolvedOptions().timeZone
-  final timeZoneName = js.context['Intl'] == null
-      ? DateTime.now().timeZoneName
-      : (((js.context['Intl'] as js.JsObject).callMethod('DateTimeFormat')
-              as js.JsObject)
-          .callMethod('resolvedOptions') as js.JsObject)['timeZone'] as String;
+  String? timeZoneName;
+  try {
+    timeZoneName = _dateTimeFormat().resolvedOptions().timeZone;
+  } catch (_) {}
 
   return {
     'id': deviceId,
-    'language': window.navigator.language,
-    'platform': {'browserUserAgent': window.navigator.userAgent},
-    'timezone': timeZoneName,
+    'language': web.window.navigator.language,
+    'platform': {'browserUserAgent': web.window.navigator.userAgent},
+    'timezone': timeZoneName ?? DateTime.now().timeZoneName,
     'type': 'web',
-    'version': document.currentScript?.getAttribute('src') ?? ''
+    'version':
+        (web.document.currentScript as web.Element?)?.getAttribute('src') ?? ''
   };
 }
